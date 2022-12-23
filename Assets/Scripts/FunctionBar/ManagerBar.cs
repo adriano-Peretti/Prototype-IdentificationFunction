@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using System.Collections;
 using UnityEngine;
 
 namespace functionBar
@@ -6,6 +6,7 @@ namespace functionBar
     [RequireComponent(typeof(InterationBar))]
     [RequireComponent(typeof(ShaderBar))]
     [RequireComponent(typeof(Hierarchy))]
+    [RequireComponent(typeof(SearchBar))]
     public class ManagerBar : MonoBehaviour
     {
         // Classes
@@ -14,12 +15,15 @@ namespace functionBar
         private InterationBar interationBar;
         private ShaderBar shaderBar;
         private Hierarchy hierarchy;
-        //public SearchBar searchBar;
+        private SearchBar searchbar;
 
         // Estado atual da barra
-        private BarState currentBarState;
+        private BarState currentBarState = new BarState();
+        private BarState lastBarState = new BarState();
 
         private GameObject lastBar;
+        //private List<GameObject> groupBarHierarchy;
+        private GameObject[] groupBarHierarchy;
 
         private void Start()
         {
@@ -27,48 +31,101 @@ namespace functionBar
             interationBar = GetComponent<InterationBar>();
             shaderBar = GetComponent<ShaderBar>();
             hierarchy = GetComponent<Hierarchy>();
+            searchbar = GetComponent<SearchBar>();
             canvasBar = GameObject.Find("PanelBar").GetComponent<CanvasBar>();
 
             // Captura os Eventos e envia para a função
             interationBar.OnSelectedBar += InterationBarBar_OnSelectedBar;
             interationBar.OnEscape += InterationBar_OnEscape;
             interationBar.OnAlterHierarchy += InterationBar_OnAlterHierarchy;
+            interationBar.OnApplyShader += InterationBar_OnApplyShader;
+
+            groupBarHierarchy = searchbar.GetAllBars();
+
+            ResetBarState();
         }
+
+        private void InterationBar_OnApplyShader()
+        {
+            StartCoroutine(CallTimerShader());
+        }
+
+        private IEnumerator CallTimerShader()
+        {
+            shaderBar.ApplyShaderInGroup(groupBarHierarchy, currentBarState);
+            yield return new WaitForSeconds(10f);
+            shaderBar.ApplyShaderInGroup(groupBarHierarchy, lastBarState);
+        }
+
+        //public static void Resize<T>(ref T[]? array, int newSize);
 
         // Função de evento que aciona quando aperta a tela H
         private void InterationBar_OnAlterHierarchy(GameObject bar)
         {
+            currentBarState.level = hierarchy.AlterLevelHierarchy(currentBarState.level);
+            lastBarState.level = currentBarState.level;
+
+            currentBarState.state = StateShader.Hierarchy;
+
+            canvasBar.AlterIndicatorLevel(currentBarState.level);
+
+            // Busca as informações da barra selecionada
+            //var resultInfo = searchbar.Search(bar.name);
+
+            var resultgroupBarHierarchy = searchbar.CaptureObjectsInGame(bar.name, currentBarState.level);
+            groupBarHierarchy = resultgroupBarHierarchy;
+
+            var arrayAllBars = searchbar.GetAllBars();
+
+            //for (int i = 0; i < arrayAllBars.Length; i++)
+            //{
+            //    arrayAllBars[i].SetActive(false);
+            //}
+
+            //for (int i = 0; i < groupBarHierarchy.Length; i++)
+            //{
+            //    groupBarHierarchy[i].SetActive(true);
+            //}
+
+
+
+
+            // Função que busca todos os objetos daquela hierarquia
+            // func(currentBarState);
+
             // Verifica se o estado atual da barra é selecionado
-            if (currentBarState.Equals(BarState.Selected))
-            {
-                // && Se a barra não faz parte daquela hierarquia
-                // Desativa os levels
-                canvasBar.DesativeLevels();
+            //if (currentBarState.Equals(BarState.Selected))
+            //{
+            //    // && Se a barra não faz parte daquela hierarquia
+            //    // Desativa os levels
+            //    canvasBar.DesativeLevels();
 
-                // Reseta para estado normal
-                currentBarState = BarState.Normal;
-            }
+            //    // Reseta para estado normal
+            //    currentBarState = BarState.Normal;
+            //}
 
-            // Reseta o shader para cor no estado normal
-            shaderBar.ClearAllShader();
+            //// Reseta o shader para cor no estado normal
+            //shaderBar.ClearAllShader();
 
-            // Aplica a cor na barra selecionada
-            //shaderBar.ApplyShader(lastBar, BarState.Selected);
+            //// Aplica a cor na barra selecionada
+            ////shaderBar.ApplyShader(lastBar, BarState.Selected);
 
-            // Altera o Level da hierarquia
-            currentBarState = hierarchy.AlterStateHierarchy(currentBarState);
+            //// Altera o Level da hierarquia
 
-            // Ativa no canvas o indicador de niveis
-            canvasBar.AlterIndicatorLevel(currentBarState);
+            ////currentBarState.level = hierarchy.AlterLevelHierarchy(currentBarState.level);
+            //currentBarState.AlterLevelHierarchy(currentBarState.level);
 
-            // Busca a lista barras conforme sua hierarquia
-            List<Bar> resultListGameObject = SearchList(bar.name, currentBarState);
+            //currentBarState.level = hierarchy.AlterLevelHierarchy(currentBarState.level);
 
-            // Busca os GameObjects conforme a lista de barras
-            List<GameObject> listGameObjects = CaptureObjects(resultListGameObject);
+            //// Ativa no canvas o indicador de niveis
 
-            // Função que aplica o shader nas barras conforme sua hierarquia
-            shaderBar.ApplyShaderWithHierarchy(listGameObjects, currentBarState);
+
+
+            //// Busca os GameObjects conforme a lista de barras
+            //List<GameObject> listGameObjects = CaptureObjects(resultListGameObject);
+
+            //// Função que aplica o shader nas barras conforme sua hierarquia
+            //shaderBar.ApplyShaderWithHierarchy(listGameObjects, currentBarState);
         }
 
         // Função de evento que aciona quando aperta a tela ESC
@@ -77,106 +134,59 @@ namespace functionBar
             // Desativa o painel
             canvasBar.DesativatePanel();
 
-            // Desativa os levels
-            canvasBar.DesativeLevels();
-
             // Reseta o shader para cor no estado normal
             shaderBar.ClearAllShader();
 
-            // Indica que o estado atual é normal
-            currentBarState = BarState.Normal;
+            ResetBarState();
         }
 
         // Função de evento que aciona quando a barra for clicada
         private void InterationBarBar_OnSelectedBar(GameObject bar)
         {
-            // Reseta o shader para cor no estado normal
-            //shaderBar.ClearAllShader();
+            //======================BARRA ANTERIOR==========================
+
+            // Reseta o shader da barra selecionada anteriormente para o estado anterior
             if (lastBar != null)
             {
-                //shaderBar.ApplyShader(lastBar, currentBarState);
-                shaderBar.ClearShader(lastBar);
+                shaderBar.ApplyShader(lastBar, lastBarState);
+            } else
+            {
+                lastBarState.state = currentBarState.state;
+                //lastBarState.level = currentBarState.level;
             }
 
             lastBar = bar;
+            //======================BARRA ANTERIOR==========================
+
+            //======================CANVAS==========================
+
+            // Busca as informações da barra selecionada
+            var resultInfo = searchbar.Search(bar.name);
+
+            // Associa os valores ao canvas
+            canvasBar.AssociateValuesInCanvas(resultInfo);
 
             // Ativa o painel
             canvasBar.AtivatePanel();
 
-            // Busca a barra selecionada
-            var result = Search(bar.name);
+            //======================CANVAS==========================
 
-            // Associa os valores ao canvas
-            canvasBar.AssociateValuesInCanvas(result);
+            //======================SHADER==========================
 
             // Indica que o estado da barra é selecionado
-            currentBarState = BarState.Selected;
+            currentBarState.state = StateShader.Selected;
 
             // Aplica cor na barra selecionada
             shaderBar.ApplyShader(bar, currentBarState);
+
+            //======================SHADER==========================
         }
 
-        // Função que busca as informações da barra no dicionario de dados
-        private Bar Search(string barName)
+        private void ResetBarState()
         {
-            Bar findBar = new Bar();
-
-            findBar.currentPhase = "Testando";
-            findBar.currentCircuit = "Testando";
-            findBar.currentBar = barName;
-            findBar.currentSlot = "Testando";
-            findBar.currentPosition = "Testando";
-            findBar.currentVoltage = "Testando";
-            findBar.voltageBetweenBars = "Testando";
-
-            findBar.otherPhase = "Testando";
-            findBar.otherCircuit = "Testando";
-            findBar.otherBar = "Testando";
-            findBar.otherPosition = "Testando";
-            findBar.otherVoltage = "Testando";
-
-            return findBar;
-        }
-
-
-
-        private List<GameObject> CaptureObjects(List<Bar> listBar)
-        {
-            List<GameObject> gameObjectList = new List<GameObject>();
-
-            foreach (var bar in listBar)
-            {
-                gameObjectList.Add(GameObject.Find(bar.currentBar));
-            }
-
-            return gameObjectList;
-        }
-
-
-        // Função que busca uma lista de barras conforme o nivel da hierarquia
-        private List<Bar> SearchList(string barName, BarState barState)
-        {
-            List<Bar> findBars = new List<Bar>();
-
-            Bar findBar = new Bar();
-
-            findBar.currentPhase = "Testando";
-            findBar.currentCircuit = "Testando";
-            findBar.currentBar = barName;
-            findBar.currentSlot = "Testando";
-            findBar.currentPosition = "Testando";
-            findBar.currentVoltage = "Testando";
-            findBar.voltageBetweenBars = "Testando";
-
-            findBar.otherPhase = "Testando";
-            findBar.otherCircuit = "Testando";
-            findBar.otherBar = "Testando";
-            findBar.otherPosition = "Testando";
-            findBar.otherVoltage = "Testando";
-
-            findBars.Add(findBar);
-
-            return findBars;
+            // Indica que o estado atual é normal
+            currentBarState.state = StateShader.Hierarchy;
+            currentBarState.level = HierarchyLevel.LevelOne;
         }
     }
 }

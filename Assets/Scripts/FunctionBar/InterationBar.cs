@@ -12,14 +12,22 @@ namespace functionBar
         // Evento para enviar a informacao do click no objeto para o Manager
         public event Action<GameObject> OnSelectedBar;
 
-        // Evento para enviar a informacao do botão de escape para o Manager
+        // Evento para enviar a informacao do botão de troca de hierarquia para o Manager
         public event Action<GameObject> OnAlterHierarchy;
 
         // Evento para enviar a informacao do botão de escape para o Manager
         public event Action<GameObject> OnEscape;
 
+        // Evento para enviar a informacao do botão de aplicar shader para o Manager
+        public event Action OnApplyShader;
+
         // Indica barra selecionada
         private GameObject barSelected = null;
+
+        // Interação de double click
+        private float doubleClickTime = .2f;
+        private float lastClickTime = 0f;
+        private float timeSinceLastClick;
 
         private void Update()
         {
@@ -35,22 +43,29 @@ namespace functionBar
                     // Verifica se o raio teve como retorno uma barra
                     if (hit.collider.CompareTag("Bar"))
                     {
-                        // Captura o gameObject da barra
-                        barSelected = hit.collider.gameObject;
+                        timeSinceLastClick = Time.time - lastClickTime;
 
-                        // Aciona o evento de barra selecionada
-                        OnSelectedBar?.Invoke(barSelected);
+                        if (timeSinceLastClick <= doubleClickTime && barSelected.Equals(hit.collider.gameObject))
+                        {
+                            // Aciona o evento de alterar a hierarquia
+                            OnAlterHierarchy?.Invoke(barSelected);
+                        } else
+                        {
+                            // Captura o gameObject da barra
+                            barSelected = hit.collider.gameObject;
+
+                            // Aciona o evento de barra selecionada
+                            OnSelectedBar?.Invoke(barSelected);
+                        }
+
+                        lastClickTime = Time.time;
                     }
                 }
             }
 
             if (Input.GetKeyDown(KeyCode.H))
             {
-                if (barSelected != null)
-                {
-                    // Aciona o evento de alterar a hierarquia
-                    OnAlterHierarchy?.Invoke(barSelected);
-                }
+                OnApplyShader?.Invoke();
             }
 
             if (Input.GetKeyDown(KeyCode.Escape))

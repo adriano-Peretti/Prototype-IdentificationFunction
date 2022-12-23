@@ -1,6 +1,6 @@
 namespace functionBar
 {
-    public class Bar
+    public class BarInfo
     {
         // Dados da barra
         public string currentPhase;
@@ -20,10 +20,23 @@ namespace functionBar
     }
 
     // Estados da barra para aplicacao de shader
-    public enum BarState
+    public class BarState
+    {
+        public StateShader state;
+        public HierarchyLevel level;
+    }
+
+    // Estados de Shader
+    public enum StateShader
     {
         Normal,
         Selected,
+        Hierarchy
+    }
+
+    // Nivel da hierarquia
+    public enum HierarchyLevel
+    {
         LevelOne,
         LevelTwo,
         LevelTree

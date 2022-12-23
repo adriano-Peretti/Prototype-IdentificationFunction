@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace functionBar
@@ -19,13 +18,15 @@ namespace functionBar
         // Todas as barras carregadas
         private GameObject[] Allbars;
 
+        private BarState barStateAux = new BarState();
+
         private void Start()
         {
             Allbars = GameObject.FindGameObjectsWithTag("Bar");
         }
 
         // Aplica o shader na barra
-        public void ApplyShader(GameObject bar, BarState state)
+        public void ApplyShader(GameObject bar, BarState barState)
         {
             // Captura o render do modelo 3D da barra
             Renderer render = bar.GetComponent<Renderer>();
@@ -33,39 +34,49 @@ namespace functionBar
             // Associa o material da barra ao renderer
             Material material = render.material;
 
-            switch (state)
+            switch (barState.state)
             {
                 default:
-                case BarState.Normal:
+                case StateShader.Normal:
                     material.color = baseColor;
                     break;
-                case BarState.Selected:
+                case StateShader.Selected:
                     material.color = interactionColor;
                     break;
-                case BarState.LevelOne:
-                    material.color = levelOneColor;
-                    break;
-                case BarState.LevelTwo:
-                    material.color = levelTwoColor;
-                    break;
-                case BarState.LevelTree:
-                    material.color = levelTreeColor;
+                case StateShader.Hierarchy:
+                    material.color = ApplyShaderWithHierarchy(barState.level);
                     break;
             }
         }
 
         // Aplica o shader nas barras conforme a hierarquia
-        public void ApplyShaderWithHierarchy(List<GameObject> bars, BarState state)
+        private Color ApplyShaderWithHierarchy(HierarchyLevel level)
         {
-            foreach (var bar in bars)
+            switch (level)
             {
-                ApplyShader(bar, state);
+                default:
+                case HierarchyLevel.LevelOne:
+                    return levelOneColor;
+                case HierarchyLevel.LevelTwo:
+                    return levelTwoColor;
+                case HierarchyLevel.LevelTree:
+                    return levelTreeColor;
+            }
+        }
+
+        public void ApplyShaderInGroup(GameObject[] arrayBars, BarState barState)
+        {
+            foreach (var bar in arrayBars)
+            {
+                ApplyShader(bar, barState);
             }
         }
 
         public void ClearShader(GameObject bar)
         {
-            ApplyShader(bar, BarState.Normal);
+            barStateAux.state = StateShader.Normal;
+
+            ApplyShader(bar, barStateAux);
         }
 
         public void ClearAllShader()

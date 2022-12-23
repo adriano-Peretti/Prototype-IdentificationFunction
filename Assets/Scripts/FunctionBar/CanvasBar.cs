@@ -65,11 +65,10 @@ namespace functionBar
 
             // Inicia os paineis de informações e leveis desligado
             DesativatePanel();
-            DesativeLevels();
         }
 
         // Associa os valores recebidos do dicionario aos textos na interface
-        public void AssociateValuesInCanvas(Bar bar)
+        public void AssociateValuesInCanvas(BarInfo bar)
         {
             currentPhase.text = "Fase: " + bar.currentPhase;
             currentCircuit.text = "Circuito: " + bar.currentCircuit;
@@ -90,38 +89,39 @@ namespace functionBar
         public void AtivatePanel()
         {
             Panel.SetActive(true);
+            levelOne.SetActive(true);
         }
 
         // Função que desativa o painel
         public void DesativatePanel()
         {
             Panel.SetActive(false);
-        }
-
-        public void AlterIndicatorLevel(BarState barState)
-        {
-            switch (barState)
-            {
-                default:
-                case BarState.Normal:
-                    DesativeLevels();
-                    break;
-                case BarState.LevelOne:
-                    levelOne.SetActive(true);
-                    break;
-                case BarState.LevelTwo:
-                    levelTwo.SetActive(true);
-                    break;
-                case BarState.LevelTree:
-                    levelTree.SetActive(true);
-                    break;
-            }
-        }
-        public void DesativeLevels()
-        {
             levelOne.SetActive(false);
             levelTwo.SetActive(false);
             levelTree.SetActive(false);
+        }
+
+        public void AlterIndicatorLevel(HierarchyLevel level)
+        {
+            switch (level)
+            {
+                default:
+                case HierarchyLevel.LevelOne:
+                    levelOne.SetActive(true);
+                    levelTwo.SetActive(false);
+                    levelTree.SetActive(false);
+                    break;
+                case HierarchyLevel.LevelTwo:
+                    levelOne.SetActive(true);
+                    levelTwo.SetActive(true);
+                    levelTree.SetActive(false);
+                    break;
+                case HierarchyLevel.LevelTree:
+                    levelOne.SetActive(true);
+                    levelTwo.SetActive(true);
+                    levelTree.SetActive(true);
+                    break;
+            }
         }
     }
 }
