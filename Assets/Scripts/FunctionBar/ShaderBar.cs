@@ -20,6 +20,9 @@ namespace functionBar
 
         private BarState barStateAux = new BarState();
 
+        private int currentShaderState = 0;
+
+
         private void Start()
         {
             Allbars = GameObject.FindGameObjectsWithTag("Bar");
@@ -38,31 +41,39 @@ namespace functionBar
             {
                 default:
                 case StateShader.Normal:
-                    material.color = baseColor;
+                    currentShaderState = 0;
+                    DefineParameters(material);
                     break;
                 case StateShader.Selected:
-                    material.color = interactionColor;
+                    currentShaderState = 1;
+                    DefineParameters(material);
+
                     break;
                 case StateShader.Hierarchy:
-                    material.color = ApplyShaderWithHierarchy(barState.level);
+                    ApplyShaderWithHierarchy(barState.level);
+                    DefineParameters(material);
                     break;
             }
         }
 
         // Aplica o shader nas barras conforme a hierarquia
-        private Color ApplyShaderWithHierarchy(HierarchyLevel level)
+        private void ApplyShaderWithHierarchy(HierarchyLevel level)
         {
             switch (level)
             {
                 default:
                 case HierarchyLevel.LevelOne:
-                    return levelOneColor;
+                    currentShaderState = 2;
+                    break;
                 case HierarchyLevel.LevelTwo:
-                    return levelTwoColor;
+                    currentShaderState = 3;
+                    break;
                 case HierarchyLevel.LevelTree:
-                    return levelTreeColor;
+                    currentShaderState = 4;
+                    break;
             }
         }
+
 
         public void ApplyShaderInGroup(GameObject[] arrayBars, BarState barState)
         {
@@ -85,6 +96,23 @@ namespace functionBar
             {
                 ClearShader(bar);
             }
+        }
+
+        public void DefineParameters(Material material)
+        {
+            if (currentShaderState == 0)
+            {
+                material.SetFloat("_State", currentShaderState);
+                material.SetFloat("_UseMetallic", currentShaderState);
+                material.SetFloat("_UseNormal", currentShaderState);
+            }
+            else
+            {
+                material.SetFloat("_State", currentShaderState);
+                material.SetFloat("_UseMetallic", 1);
+                material.SetFloat("_UseNormal", 1);
+            }
+
         }
     }
 }
